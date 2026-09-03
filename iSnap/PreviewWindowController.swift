@@ -45,7 +45,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
         let window = PreviewWindow(
             contentRect: Self.windowFrame(for: image),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -71,7 +71,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
     private func configureWindow(_ window: NSWindow) {
         window.title = "iSnap Editor"
-        window.titlebarAppearsTransparent = true
+        window.titlebarAppearsTransparent = false
         window.titleVisibility = .visible
         // Keep image drags available to the annotation canvas. The title bar
         // remains draggable when the user wants to move the editor window.
