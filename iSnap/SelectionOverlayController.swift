@@ -7,6 +7,7 @@ final class SelectionOverlayController {
     private var eventMonitor: Any?
     private var completion: Completion?
     private var pushedCursor = false
+    private var isFinishing = false
 
     func begin(completion: @escaping Completion) {
         self.completion = completion
@@ -23,6 +24,7 @@ final class SelectionOverlayController {
             window.backgroundColor = .clear
             window.isOpaque = false
             window.hasShadow = false
+            window.isReleasedWhenClosed = false
             window.level = .screenSaver
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
             window.acceptsMouseMovedEvents = true
@@ -69,12 +71,18 @@ final class SelectionOverlayController {
     }
 
     private func finish(rect: CGRect?, useDelay: Bool) {
+        guard !isFinishing else { return }
+        isFinishing = true
+
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
             self.eventMonitor = nil
         }
-        windows.forEach { $0.close() }
-        windows.removeAll()
+
+        // Hiding is safe during mouseUp. Closing here can release the view while
+        // AppKit is still dispatching that view's event, causing EXC_BAD_ACCESS.
+        let windowsToClose = windows
+        windowsToClose.forEach { $0.orderOut(nil) }
 
         if pushedCursor {
             NSCursor.pop()
@@ -83,7 +91,11 @@ final class SelectionOverlayController {
 
         let callback = completion
         completion = nil
-        callback?(rect, useDelay)
+        DispatchQueue.main.async { [weak self, windowsToClose] in
+            windowsToClose.forEach { $0.close() }
+            self?.windows.removeAll()
+            callback?(rect, useDelay)
+        }
     }
 }
 
