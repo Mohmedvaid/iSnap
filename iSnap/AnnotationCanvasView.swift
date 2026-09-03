@@ -47,6 +47,7 @@ final class AnnotationCanvasView: NSView {
     }
 
     override var acceptsFirstResponder: Bool { true }
+    override var mouseDownCanMoveWindow: Bool { false }
 
     override func resetCursorRects() {
         addCursorRect(imageRect, cursor: .crosshair)
