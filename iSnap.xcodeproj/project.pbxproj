@@ -15,7 +15,6 @@
 		A10000000000000000000006 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* main.swift */; };
 		A10000000000000000000007 /* ShortcutPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* ShortcutPreferences.swift */; };
 		A10000000000000000000008 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* SettingsWindowController.swift */; };
-		A10000000000000000000009 /* SelectionOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* SelectionOverlayController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,7 +28,6 @@
 		A20000000000000000000008 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* ShortcutPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutPreferences.swift; sourceTree = "<group>"; };
 		A20000000000000000000010 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
-		A20000000000000000000011 /* SelectionOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionOverlayController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,7 +58,6 @@
 				A20000000000000000000003 /* HotKeyManager.swift */,
 				A20000000000000000000009 /* ShortcutPreferences.swift */,
 				A20000000000000000000010 /* SettingsWindowController.swift */,
-				A20000000000000000000011 /* SelectionOverlayController.swift */,
 				A20000000000000000000004 /* ScreenshotController.swift */,
 				A20000000000000000000005 /* PreviewWindowController.swift */,
 				A20000000000000000000006 /* Info.plist */,
@@ -150,7 +147,6 @@
 				A10000000000000000000003 /* HotKeyManager.swift in Sources */,
 				A10000000000000000000007 /* ShortcutPreferences.swift in Sources */,
 				A10000000000000000000008 /* SettingsWindowController.swift in Sources */,
-				A10000000000000000000009 /* SelectionOverlayController.swift in Sources */,
 				A10000000000000000000004 /* ScreenshotController.swift in Sources */,
 				A10000000000000000000005 /* PreviewWindowController.swift in Sources */,
 			);

@@ -28,6 +28,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(actionMenuItem(for: .captureArea, action: #selector(captureArea)))
         menu.addItem(actionMenuItem(for: .captureFullScreen, action: #selector(captureFullScreen)))
         menu.addItem(.separator())
+        menu.addItem(actionMenuItem(for: .delayedArea, action: #selector(captureDelayedArea)))
+        menu.addItem(actionMenuItem(for: .delayedFullScreen, action: #selector(captureDelayedFullScreen)))
+        menu.addItem(.separator())
         let settingsItem = NSMenuItem(
             title: "Settings…",
             action: #selector(openSettings),
@@ -59,7 +62,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotKeyManager = nil
         let actions: [ShortcutAction: () -> Void] = [
             .captureArea: { [weak self] in self?.captureArea() },
-            .captureFullScreen: { [weak self] in self?.captureFullScreen() }
+            .captureFullScreen: { [weak self] in self?.captureFullScreen() },
+            .delayedArea: { [weak self] in self?.captureDelayedArea() },
+            .delayedFullScreen: { [weak self] in self?.captureDelayedFullScreen() }
         ]
 
         let shortcuts: [HotKeyManager.Shortcut] = ShortcutAction.allCases.compactMap { action in
@@ -101,6 +106,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func captureFullScreen() {
         screenshotController.capture(.fullScreen)
+    }
+
+    @objc private func captureDelayedArea() {
+        screenshotController.capture(.area, delay: 5)
+    }
+
+    @objc private func captureDelayedFullScreen() {
+        screenshotController.capture(.fullScreen, delay: 5)
     }
 
     @objc private func openSettings() {

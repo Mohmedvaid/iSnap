@@ -11,7 +11,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.shortcutStore = shortcutStore
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 540, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: 540, height: 360),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -202,3 +202,4 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onShortcutsChanged?()
     }
 }
+

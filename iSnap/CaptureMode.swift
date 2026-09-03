@@ -15,16 +15,21 @@ enum CaptureMode {
 }
 
 enum ScreenshotCommandBuilder {
-    static func arguments(for mode: CaptureMode, selectionRect: CGRect? = nil) -> [String] {
+    static func arguments(for mode: CaptureMode, delay: TimeInterval) -> [String] {
+        var arguments: [String]
+
         switch mode {
         case .area:
-            guard let rect = selectionRect?.standardized.integral else {
-                return ["-i", "-c", "-x"]
-            }
-            let region = "\(Int(rect.minX)),\(Int(rect.minY)),\(Int(rect.width)),\(Int(rect.height))"
-            return ["-R\(region)", "-c", "-x"]
+            arguments = ["-i", "-c", "-x"]
         case .fullScreen:
-            return ["-m", "-c", "-x"]
+            arguments = ["-m", "-c", "-x"]
         }
+
+        if delay > 0 {
+            arguments.append(contentsOf: ["-T", String(Int(delay))])
+        }
+
+        return arguments
     }
 }
+
