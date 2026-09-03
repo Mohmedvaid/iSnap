@@ -7,7 +7,11 @@ iSnap is a tiny, local-only macOS screenshot utility built around one fast workf
 3. The image opens immediately in an iSnap preview.
 4. Press **Command-C** to copy it and **Escape** to close.
 
-There are no accounts, uploads, annotations, or background services.
+There are no accounts, uploads, or background services.
+
+On the experimental `feature/annotations` branch, the preview also includes red arrows,
+red rectangles, and a translucent highlighter. Annotations are flattened into the image
+when you copy or save it, and can be undone with **Command-Z**.
 
 ## Shortcuts
 
@@ -44,5 +48,7 @@ iSnap uses macOS's built-in `/usr/sbin/screencapture` process for the native sel
 - Global keyboard shortcuts
 - Persistent, customizable keyboard shortcuts
 - Immediate lightweight preview
+- Arrow, rectangle, and highlighter annotations
+- Undo, redo, and clear annotation actions
 - Copy, save, and close actions
 - Local-only operation
