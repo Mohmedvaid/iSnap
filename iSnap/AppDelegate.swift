@@ -1,10 +1,12 @@
 import AppKit
-import Carbon
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let screenshotController = ScreenshotController()
+    private let shortcutStore = ShortcutStore()
     private var statusItem: NSStatusItem?
     private var hotKeyManager: HotKeyManager?
+    private var settingsWindowController: SettingsWindowController?
+    private var actionMenuItems: [ShortcutAction: NSMenuItem] = [:]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -23,39 +25,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        menu.addItem(menuItem(
-            title: "Capture Area",
-            action: #selector(captureArea),
-            key: "5",
-            modifiers: [.command, .option]
-        ))
-        menu.addItem(menuItem(
-            title: "Capture Full Screen",
-            action: #selector(captureFullScreen),
-            key: "6",
-            modifiers: [.command, .option]
-        ))
+        menu.addItem(actionMenuItem(for: .captureArea, action: #selector(captureArea)))
+        menu.addItem(actionMenuItem(for: .captureFullScreen, action: #selector(captureFullScreen)))
         menu.addItem(.separator())
-        menu.addItem(menuItem(
-            title: "Delayed Area (5 seconds)",
-            action: #selector(captureDelayedArea),
-            key: "5",
-            modifiers: [.command, .option, .shift]
-        ))
-        menu.addItem(menuItem(
-            title: "Delayed Full Screen (5 seconds)",
-            action: #selector(captureDelayedFullScreen),
-            key: "6",
-            modifiers: [.command, .option, .shift]
-        ))
+        menu.addItem(actionMenuItem(for: .delayedArea, action: #selector(captureDelayedArea)))
+        menu.addItem(actionMenuItem(for: .delayedFullScreen, action: #selector(captureDelayedFullScreen)))
         menu.addItem(.separator())
         let settingsItem = NSMenuItem(
+            title: "Settings…",
+            action: #selector(openSettings),
+            keyEquivalent: ","
+        )
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        let screenRecordingItem = NSMenuItem(
             title: "Open Screen Recording Settings…",
             action: #selector(openScreenRecordingSettings),
             keyEquivalent: ""
         )
-        settingsItem.target = self
-        menu.addItem(settingsItem)
+        screenRecordingItem.target = self
+        menu.addItem(screenRecordingItem)
         menu.addItem(.separator())
         let quitItem = NSMenuItem(
             title: "Quit iSnap",
@@ -70,47 +59,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func registerGlobalShortcuts() {
-        let baseModifiers = UInt32(cmdKey | optionKey)
-        let delayedModifiers = UInt32(cmdKey | optionKey | shiftKey)
+        hotKeyManager = nil
+        let actions: [ShortcutAction: () -> Void] = [
+            .captureArea: { [weak self] in self?.captureArea() },
+            .captureFullScreen: { [weak self] in self?.captureFullScreen() },
+            .delayedArea: { [weak self] in self?.captureDelayedArea() },
+            .delayedFullScreen: { [weak self] in self?.captureDelayedFullScreen() }
+        ]
 
-        hotKeyManager = HotKeyManager(shortcuts: [
-            .init(
-                id: 1,
-                keyCode: UInt32(kVK_ANSI_5),
-                modifiers: baseModifiers,
-                action: { [weak self] in self?.captureArea() }
-            ),
-            .init(
-                id: 2,
-                keyCode: UInt32(kVK_ANSI_6),
-                modifiers: baseModifiers,
-                action: { [weak self] in self?.captureFullScreen() }
-            ),
-            .init(
-                id: 3,
-                keyCode: UInt32(kVK_ANSI_5),
-                modifiers: delayedModifiers,
-                action: { [weak self] in self?.captureDelayedArea() }
-            ),
-            .init(
-                id: 4,
-                keyCode: UInt32(kVK_ANSI_6),
-                modifiers: delayedModifiers,
-                action: { [weak self] in self?.captureDelayedFullScreen() }
+        let shortcuts: [HotKeyManager.Shortcut] = ShortcutAction.allCases.compactMap { action in
+            guard let callback = actions[action] else { return nil }
+            let shortcut = shortcutStore.shortcut(for: action)
+            return HotKeyManager.Shortcut(
+                id: action.id,
+                keyCode: shortcut.keyCode,
+                modifiers: shortcut.carbonModifiers,
+                action: callback
             )
-        ])
+        }
+        hotKeyManager = HotKeyManager(shortcuts: shortcuts)
+        refreshMenuShortcutTitles()
     }
 
-    private func menuItem(
-        title: String,
-        action: Selector,
-        key: String,
-        modifiers: NSEvent.ModifierFlags
-    ) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+    private func actionMenuItem(for shortcutAction: ShortcutAction, action: Selector) -> NSMenuItem {
+        let shortcut = shortcutStore.shortcut(for: shortcutAction)
+        let item = NSMenuItem(
+            title: "\(shortcutAction.title)    \(shortcut.displayName)",
+            action: action,
+            keyEquivalent: ""
+        )
         item.target = self
-        item.keyEquivalentModifierMask = modifiers
+        actionMenuItems[shortcutAction] = item
         return item
+    }
+
+    private func refreshMenuShortcutTitles() {
+        for action in ShortcutAction.allCases {
+            let shortcut = shortcutStore.shortcut(for: action)
+            actionMenuItems[action]?.title = "\(action.title)    \(shortcut.displayName)"
+        }
     }
 
     @objc private func captureArea() {
@@ -129,6 +116,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         screenshotController.capture(.fullScreen, delay: 5)
     }
 
+    @objc private func openSettings() {
+        if settingsWindowController == nil {
+            let controller = SettingsWindowController(shortcutStore: shortcutStore)
+            controller.onShortcutsChanged = { [weak self] in
+                self?.registerGlobalShortcuts()
+            }
+            settingsWindowController = controller
+        }
+        settingsWindowController?.showWindow(nil)
+    }
+
     @objc private func openScreenRecordingSettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") else {
             return
@@ -140,4 +138,3 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 }
-

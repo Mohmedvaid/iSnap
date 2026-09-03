@@ -20,6 +20,10 @@ There are no accounts, uploads, annotations, or background services.
 
 You can also trigger every action from the camera icon in the menu bar.
 
+### Customize shortcuts
+
+Open the camera menu and choose **Settings…** (or press **Command-,**). Click the shortcut beside any action, then press the new combination. iSnap saves custom shortcuts automatically and restores them the next time it launches. Duplicate combinations are rejected, and **Restore Defaults** returns all four actions to the original shortcuts.
+
 ## Run it
 
 1. Open `iSnap.xcodeproj` in Xcode 15 or newer.
@@ -38,7 +42,7 @@ iSnap uses macOS's built-in `/usr/sbin/screencapture` process for the native sel
 - Native area and full-screen capture
 - Five-second delayed captures
 - Global keyboard shortcuts
+- Persistent, customizable keyboard shortcuts
 - Immediate lightweight preview
 - Copy, save, and close actions
 - Local-only operation
-
