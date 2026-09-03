@@ -9,8 +9,8 @@ iSnap is a tiny, local-only macOS screenshot utility built around one fast workf
 
 There are no accounts, uploads, or background services.
 
-On the experimental `feature/annotations` branch, the preview also includes red arrows,
-red rectangles, and a translucent highlighter. Annotations are flattened into the image
+The preview also includes red arrows, red rectangles, and a translucent highlighter.
+Annotations are flattened into the image
 when you copy or save it, and can be undone with **Command-Z**.
 
 ## Shortcuts
