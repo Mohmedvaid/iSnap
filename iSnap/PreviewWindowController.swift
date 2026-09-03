@@ -73,7 +73,9 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         window.title = "iSnap Editor"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .visible
-        window.isMovableByWindowBackground = true
+        // Keep image drags available to the annotation canvas. The title bar
+        // remains draggable when the user wants to move the editor window.
+        window.isMovableByWindowBackground = false
         window.level = .floating
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.minSize = NSSize(width: 420, height: 280)
