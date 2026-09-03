@@ -4,15 +4,11 @@ import Carbon
 enum ShortcutAction: String, CaseIterable, Codable, Hashable {
     case captureArea
     case captureFullScreen
-    case delayedArea
-    case delayedFullScreen
 
     var id: UInt32 {
         switch self {
         case .captureArea: return 1
         case .captureFullScreen: return 2
-        case .delayedArea: return 3
-        case .delayedFullScreen: return 4
         }
     }
 
@@ -20,24 +16,17 @@ enum ShortcutAction: String, CaseIterable, Codable, Hashable {
         switch self {
         case .captureArea: return "Capture Area"
         case .captureFullScreen: return "Capture Full Screen"
-        case .delayedArea: return "Delayed Area (5 seconds)"
-        case .delayedFullScreen: return "Delayed Full Screen (5 seconds)"
         }
     }
 
     var defaultShortcut: KeyboardShortcut {
         let modifiers: NSEvent.ModifierFlags
-        switch self {
-        case .captureArea, .captureFullScreen:
-            modifiers = [.command, .option]
-        case .delayedArea, .delayedFullScreen:
-            modifiers = [.command, .option, .shift]
-        }
+        modifiers = [.command, .option]
 
         switch self {
-        case .captureArea, .delayedArea:
+        case .captureArea:
             return KeyboardShortcut(keyCode: UInt32(kVK_ANSI_5), modifierFlags: modifiers, keyLabel: "5")
-        case .captureFullScreen, .delayedFullScreen:
+        case .captureFullScreen:
             return KeyboardShortcut(keyCode: UInt32(kVK_ANSI_6), modifierFlags: modifiers, keyLabel: "6")
         }
     }

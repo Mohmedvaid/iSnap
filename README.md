@@ -15,10 +15,10 @@ There are no accounts, uploads, annotations, or background services.
 | --- | --- |
 | Capture an area | Option-Command-5 |
 | Capture the full main display | Option-Command-6 |
-| Capture an area after 5 seconds | Shift-Option-Command-5 |
-| Capture the full main display after 5 seconds | Shift-Option-Command-6 |
 
 You can also trigger every action from the camera icon in the menu bar.
+
+For a delayed area capture, start **Capture Area**, hold **Control** while dragging the selection, and release the mouse. iSnap hides the selection overlay and captures that exact rectangle five seconds later, giving you time to open a dropdown or hover state.
 
 ### Customize shortcuts
 
@@ -40,7 +40,7 @@ iSnap uses macOS's built-in `/usr/sbin/screencapture` process for the native sel
 ## Current scope
 
 - Native area and full-screen capture
-- Five-second delayed captures
+- Control-drag five-second delayed area captures
 - Global keyboard shortcuts
 - Persistent, customizable keyboard shortcuts
 - Immediate lightweight preview
