@@ -2,10 +2,9 @@ import AppKit
 
 final class ScreenshotController {
     private var previewWindowController: PreviewWindowController?
-    private var selectionOverlayController: SelectionOverlayController?
     private var isCapturing = false
 
-    func capture(_ mode: CaptureMode) {
+    func capture(_ mode: CaptureMode, delay: TimeInterval = 0) {
         guard !isCapturing else {
             NSSound.beep()
             return
@@ -15,46 +14,11 @@ final class ScreenshotController {
         previewWindowController?.close()
         previewWindowController = nil
 
-        switch mode {
-        case .area:
-            beginAreaSelection()
-        case .fullScreen:
-            runCapture(mode: .fullScreen)
-        }
-    }
-
-    private func beginAreaSelection() {
-        let overlay = SelectionOverlayController()
-        selectionOverlayController = overlay
-        overlay.begin { [weak self] rect, useDelay in
-            guard let self else { return }
-            self.selectionOverlayController = nil
-
-            guard let rect else {
-                self.isCapturing = false
-                return
-            }
-
-            if useDelay {
-                NSSound(named: "Tink")?.play()
-            }
-
-            let delay: TimeInterval = useDelay ? 5 : 0.08
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                self?.runCapture(mode: .area, selectionRect: rect)
-            }
-        }
-    }
-
-    private func runCapture(mode: CaptureMode, selectionRect: CGRect? = nil) {
         let pasteboard = NSPasteboard.general
         let previousChangeCount = pasteboard.changeCount
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        process.arguments = ScreenshotCommandBuilder.arguments(
-            for: mode,
-            selectionRect: selectionRect
-        )
+        process.arguments = ScreenshotCommandBuilder.arguments(for: mode, delay: delay)
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
@@ -114,3 +78,4 @@ final class ScreenshotController {
         alert.runModal()
     }
 }
+
