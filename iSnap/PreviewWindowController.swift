@@ -3,6 +3,8 @@ import UniformTypeIdentifiers
 
 private final class PreviewWindow: NSWindow {
     var copyAction: (() -> Void)?
+    var undoAction: (() -> Void)?
+    var redoAction: (() -> Void)?
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 {
@@ -16,21 +18,34 @@ private final class PreviewWindow: NSWindow {
             return
         }
 
+        if event.modifierFlags.contains(.command),
+           event.charactersIgnoringModifiers?.lowercased() == "z" {
+            if event.modifierFlags.contains(.shift) {
+                redoAction?()
+            } else {
+                undoAction?()
+            }
+            return
+        }
+
         super.keyDown(with: event)
     }
 }
 
 final class PreviewWindowController: NSWindowController, NSWindowDelegate {
-    private let image: NSImage
+    private let canvas: AnnotationCanvasView
     private let copyButton = NSButton()
+    private let undoButton = NSButton()
+    private let redoButton = NSButton()
+    private let clearButton = NSButton()
     var onClose: (() -> Void)?
 
     init(image: NSImage) {
-        self.image = image
+        canvas = AnnotationCanvasView(image: image)
 
         let window = PreviewWindow(
             contentRect: Self.windowFrame(for: image),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -39,6 +54,9 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         configureWindow(window)
         buildContent(in: window)
         window.copyAction = { [weak self] in self?.copyImage() }
+        window.undoAction = { [weak self] in self?.undo() }
+        window.redoAction = { [weak self] in self?.redo() }
+        window.initialFirstResponder = canvas
         window.delegate = self
     }
 
@@ -52,10 +70,12 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func configureWindow(_ window: NSWindow) {
-        window.title = "iSnap Preview"
-        window.titlebarAppearsTransparent = true
+        window.title = "iSnap Editor"
+        window.titlebarAppearsTransparent = false
         window.titleVisibility = .visible
-        window.isMovableByWindowBackground = true
+        // Keep image drags available to the annotation canvas. The title bar
+        // remains draggable when the user wants to move the editor window.
+        window.isMovableByWindowBackground = false
         window.level = .floating
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.minSize = NSSize(width: 420, height: 280)
@@ -69,10 +89,43 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         root.state = .active
         root.translatesAutoresizingMaskIntoConstraints = false
 
-        let imageView = NSImageView(image: image)
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        imageView.imageAlignment = .alignCenter
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        let toolSelector = NSSegmentedControl(
+            labels: ["Arrow", "Rectangle", "Highlight"],
+            trackingMode: .selectOne,
+            target: self,
+            action: #selector(toolChanged(_:))
+        )
+        toolSelector.selectedSegment = AnnotationTool.arrow.rawValue
+        toolSelector.segmentStyle = .rounded
+        toolSelector.setWidth(72, forSegment: AnnotationTool.arrow.rawValue)
+        toolSelector.setWidth(88, forSegment: AnnotationTool.rectangle.rawValue)
+        toolSelector.setWidth(82, forSegment: AnnotationTool.highlighter.rawValue)
+
+        configureToolbarButton(
+            undoButton,
+            symbolName: "arrow.uturn.backward",
+            accessibilityLabel: "Undo",
+            action: #selector(undo)
+        )
+        configureToolbarButton(
+            redoButton,
+            symbolName: "arrow.uturn.forward",
+            accessibilityLabel: "Redo",
+            action: #selector(redo)
+        )
+
+        clearButton.title = "Clear"
+        clearButton.bezelStyle = .rounded
+        clearButton.target = self
+        clearButton.action = #selector(clearAnnotations)
+
+        let toolbarSpacer = NSView()
+        toolbarSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let toolbar = NSStackView(views: [toolSelector, toolbarSpacer, undoButton, redoButton, clearButton])
+        toolbar.orientation = .horizontal
+        toolbar.alignment = .centerY
+        toolbar.spacing = 8
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
 
         let separator = NSBox()
         separator.boxType = .separator
@@ -90,7 +143,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         let closeButton = NSButton(title: "Close", target: self, action: #selector(closePreview))
         closeButton.bezelStyle = .rounded
 
-        let hint = NSTextField(labelWithString: "⌘C copy   •   Esc close")
+        let hint = NSTextField(labelWithString: "Drag to annotate   •   ⌘Z undo   •   ⌘C copy   •   Esc close")
         hint.textColor = .secondaryLabelColor
         hint.font = .systemFont(ofSize: 12)
 
@@ -102,16 +155,27 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         actions.spacing = 10
         actions.translatesAutoresizingMaskIntoConstraints = false
 
-        root.addSubview(imageView)
+        root.addSubview(toolbar)
+        root.addSubview(canvas)
         root.addSubview(separator)
         root.addSubview(actions)
         window.contentView = root
 
+        canvas.onHistoryChange = { [weak self] in
+            self?.updateHistoryButtons()
+        }
+        updateHistoryButtons()
+
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: root.topAnchor, constant: 18),
-            imageView.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 18),
-            imageView.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -18),
-            imageView.bottomAnchor.constraint(equalTo: separator.topAnchor, constant: -14),
+            toolbar.topAnchor.constraint(equalTo: root.topAnchor, constant: 14),
+            toolbar.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 18),
+            toolbar.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -18),
+            toolbar.heightAnchor.constraint(equalToConstant: 30),
+
+            canvas.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: 10),
+            canvas.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 18),
+            canvas.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -18),
+            canvas.bottomAnchor.constraint(equalTo: separator.topAnchor, constant: -14),
 
             separator.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             separator.trailingAnchor.constraint(equalTo: root.trailingAnchor),
@@ -126,10 +190,48 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         ])
     }
 
+    private func configureToolbarButton(
+        _ button: NSButton,
+        symbolName: String,
+        accessibilityLabel: String,
+        action: Selector
+    ) {
+        button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: accessibilityLabel)
+        button.imagePosition = .imageOnly
+        button.bezelStyle = .texturedRounded
+        button.target = self
+        button.action = action
+        button.toolTip = accessibilityLabel
+        button.setAccessibilityLabel(accessibilityLabel)
+    }
+
+    private func updateHistoryButtons() {
+        undoButton.isEnabled = canvas.canUndo
+        redoButton.isEnabled = canvas.canRedo
+        clearButton.isEnabled = canvas.canUndo
+    }
+
+    @objc private func toolChanged(_ sender: NSSegmentedControl) {
+        guard let tool = AnnotationTool(rawValue: sender.selectedSegment) else { return }
+        canvas.tool = tool
+    }
+
+    @objc private func undo() {
+        canvas.undo()
+    }
+
+    @objc private func redo() {
+        canvas.redo()
+    }
+
+    @objc private func clearAnnotations() {
+        canvas.clear()
+    }
+
     @objc private func copyImage() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.writeObjects([image])
+        pasteboard.writeObjects([canvas.renderedImage()])
 
         copyButton.title = "Copied"
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
@@ -152,7 +254,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK,
                   let destination = panel.url,
-                  let image = self?.image,
+                  let image = self?.canvas.renderedImage(),
                   let tiff = image.tiffRepresentation,
                   let bitmap = NSBitmapImageRep(data: tiff),
                   let png = bitmap.representation(using: .png, properties: [:]) else {
@@ -181,7 +283,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
         let scale = min(maxWidth / imageSize.width, maxImageHeight / imageSize.height, 1)
         let width = max(480, imageSize.width * scale + 36)
-        let height = max(320, imageSize.height * scale + 100)
+        let height = max(360, imageSize.height * scale + 144)
         return NSRect(x: 0, y: 0, width: width, height: height)
     }
 
