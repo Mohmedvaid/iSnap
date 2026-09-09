@@ -11,8 +11,13 @@ final class ScreenshotController {
         }
 
         isCapturing = true
-        previewWindowController?.close()
-        previewWindowController = nil
+        // Hide the editor during capture, but keep its edits if selection is cancelled.
+        guard previewWindowController?.window?.attachedSheet == nil else {
+            isCapturing = false
+            NSSound.beep()
+            return
+        }
+        previewWindowController?.window?.orderOut(nil)
 
         let pasteboard = NSPasteboard.general
         let previousChangeCount = pasteboard.changeCount
@@ -34,6 +39,7 @@ final class ScreenshotController {
             } catch {
                 DispatchQueue.main.async {
                     self?.isCapturing = false
+                    self?.restorePreview()
                     self?.showCaptureError(error)
                 }
             }
@@ -53,9 +59,11 @@ final class ScreenshotController {
                   forClasses: [NSImage.self],
                   options: nil
               )?.first as? NSImage else {
+            restorePreview()
             return
         }
 
+        previewWindowController?.close()
         let preview = PreviewWindowController(image: image)
         preview.onClose = { [weak self, weak preview] in
             if self?.previewWindowController === preview {
@@ -64,6 +72,13 @@ final class ScreenshotController {
         }
         previewWindowController = preview
 
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+        preview.showWindow(nil)
+        preview.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func restorePreview() {
+        guard let preview = previewWindowController else { return }
         NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
         preview.showWindow(nil)
         preview.window?.makeKeyAndOrderFront(nil)

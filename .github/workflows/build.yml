@@ -19,3 +19,18 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Preview regression checks
+        run: |
+          mkdir -p .build/preview-artifacts
+          xcrun swiftc -swift-version 5 -o .build/preview-regression \
+            iSnap/AnnotationCanvasView.swift \
+            iSnap/PreviewWindowController.swift \
+            Tests/PreviewRegression.swift
+          PREVIEW_ARTIFACT_DIR=.build/preview-artifacts .build/preview-regression
+      - name: Upload preview snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-snapshots
+          path: .build/preview-artifacts
+          if-no-files-found: ignore
