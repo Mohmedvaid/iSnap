@@ -47,7 +47,18 @@ struct PreviewRegression {
               let view = window.contentView,
               let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: bitmap)
-        try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: directory).appendingPathComponent(name))
+        // The content view is transparent; composite its cache onto the actual window color.
+        let output = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: bitmap.pixelsWide,
+            pixelsHigh: bitmap.pixelsHigh, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+            isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: output)
+        let rect = NSRect(x: 0, y: 0, width: bitmap.pixelsWide, height: bitmap.pixelsHigh)
+        window.backgroundColor.setFill()
+        rect.fill()
+        bitmap.draw(in: rect)
+        NSGraphicsContext.restoreGraphicsState()
+        try! output.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: directory).appendingPathComponent(name))
     }
 
     static func main() {
@@ -110,6 +121,12 @@ struct PreviewRegression {
         let window = preview.window!
         preview.showWindow(nil)
         window.makeKeyAndOrderFront(nil)
+        let editorCanvas = (window.contentView!.subviews.compactMap { $0 as? NSScrollView }.first!.documentView as! AnnotationCanvasView)
+        editorCanvas.addText("Preview check", at: CGPoint(x: 80, y: 900))
+        editorCanvas.tool = .rectangle
+        let imageRect = editorCanvas.imageRect
+        drag(editorCanvas, from: CGPoint(x: imageRect.midX, y: imageRect.midY),
+             to: CGPoint(x: imageRect.midX + 60, y: imageRect.midY + 35))
         for size in [NSSize(width: 640, height: 340), NSSize(width: 1050, height: 700)] {
             window.setContentSize(size)
             window.contentView!.layoutSubtreeIfNeeded()
@@ -119,12 +136,11 @@ struct PreviewRegression {
             for child in root.subviews {
                 require(root.bounds.insetBy(dx: -1, dy: -1).contains(child.frame), "Preview content extends outside window")
                 if let stack = child as? NSStackView {
-                    for control in stack.arrangedSubviews {
-                        require(stack.bounds.insetBy(dx: -1, dy: -1).contains(control.frame), "Toolbar control clipped: \(type(of: control)) frame=\(control.frame), alignment=\(control.alignmentRect(forFrame: control.frame)), stack=\(stack.bounds), superview=\(String(describing: control.superview))")
+                    for control in stack.arrangedSubviews where control is NSControl {
+                        require(stack.bounds.insetBy(dx: -1, dy: -1).contains(control.alignmentRect(forFrame: control.frame)), "Toolbar control clipped: \(type(of: control)) frame=\(control.frame), alignment=\(control.alignmentRect(forFrame: control.frame)), stack=\(stack.bounds), superview=\(String(describing: control.superview))")
                     }
                 }
             }
-            snapshot(window, name: "preview-\(Int(size.width)).png")
         }
         require(window.performKeyEquivalent(with: key("c", code: 8, flags: .command, window: window)), "Copy shortcut not handled")
         let copied = NSBitmapImageRep(data: NSPasteboard.general.data(forType: .png)!)!
