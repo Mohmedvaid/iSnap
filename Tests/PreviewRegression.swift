@@ -115,11 +115,12 @@ struct PreviewRegression {
             window.contentView!.layoutSubtreeIfNeeded()
             preview.windowDidResize(Notification(name: NSWindow.didResizeNotification, object: window))
             let root = window.contentView!
+            snapshot(window, name: "preview-\(Int(size.width)).png")
             for child in root.subviews {
                 require(root.bounds.insetBy(dx: -1, dy: -1).contains(child.frame), "Preview content extends outside window")
                 if let stack = child as? NSStackView {
                     for control in stack.arrangedSubviews {
-                        require(stack.bounds.insetBy(dx: -1, dy: -1).contains(control.frame), "Toolbar control clipped")
+                        require(stack.bounds.insetBy(dx: -1, dy: -1).contains(control.frame), "Toolbar control clipped: \(type(of: control)) frame=\(control.frame), alignment=\(control.alignmentRect(forFrame: control.frame)), stack=\(stack.bounds), superview=\(String(describing: control.superview))")
                     }
                 }
             }
