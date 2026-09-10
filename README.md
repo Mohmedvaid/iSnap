@@ -52,3 +52,41 @@ iSnap uses macOS's built-in `/usr/sbin/screencapture` process for the native sel
 - Undo, redo, and clear annotation actions
 - Copy, save, and close actions
 - Local-only operation
+
+## Enhanced editor (preview branch)
+
+- Arrow, rectangle, highlight, freehand pen, oval, text labels, and solid black redaction.
+- Six colors and three thicknesses. Highlight defaults to yellow; color and size preferences persist.
+- Hold Shift while drawing to snap arrow angles or draw squares/circles.
+- Undo/redo includes Clear. Escape cancels an unfinished stroke before closing the window.
+- Fit, 100%, and zoom controls with scrolling for large screenshots.
+- Copy & Close for the fast capture → annotate → paste workflow.
+- Source pixel dimensions are preserved in PNG/clipboard exports, including Retina images.
+- Existing annotations keep the same exported geometry and thickness after zooming/resizing.
+- Canceling a new capture restores the previous editor and its annotations.
+
+| Editor action | Shortcut |
+| --- | --- |
+| Arrow / Rectangle / Highlight | A / R / H |
+| Pen / Oval / Text / Redact | P / O / T / X |
+| Copy | Command-C or Return |
+| Copy & Close | Shift-Command-C |
+| Save PNG | Command-S |
+| Undo / Redo | Command-Z / Shift-Command-Z |
+| Fit / 100% | Command-0 / Command-1 |
+| Zoom in / out | Command-Plus / Command-Minus |
+| Close / Cancel unfinished stroke | Escape |
+| Close | Command-W |
+
+Text is added through a small input sheet after clicking the image. Color and thickness
+apply to new annotations. Redaction is an opaque black fill baked into copied/saved
+pixels; the unedited screenshot remains in memory while editing and on the clipboard
+until you explicitly Copy the edited result. There is no automatic saving or history on disk.
+
+### Validation
+
+CI builds the app and runs native AppKit regression checks for Retina pixel dimensions,
+opaque redaction, export invariance after zoom/resize, drawing tools, undo/redo/Clear,
+cancelled strokes, clipboard shortcuts, and minimum/large preview layouts. It also
+uploads preview snapshots. Hands-on multi-display capture, permission prompts, and
+interactive save/text sheets still need testing on a Mac.
