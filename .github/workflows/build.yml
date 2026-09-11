@@ -18,6 +18,8 @@ jobs:
             -derivedDataPath .build \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Validate local installer
+        run: bash -n scripts/install-local.sh
 
       - name: Preview regression checks
         run: |

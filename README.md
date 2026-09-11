@@ -53,7 +53,7 @@ iSnap uses macOS's built-in `/usr/sbin/screencapture` process for the native sel
 - Copy, save, and close actions
 - Local-only operation
 
-## Enhanced editor (preview branch)
+## Enhanced editor
 
 - Arrow, rectangle, highlight, freehand pen, oval, text labels, and solid black redaction.
 - Six colors and three thicknesses. Highlight defaults to yellow; color and size preferences persist.
@@ -90,3 +90,21 @@ opaque redaction, export invariance after zoom/resize, drawing tools, undo/redo/
 cancelled strokes, clipboard shortcuts, and minimum/large preview layouts. It also
 uploads preview snapshots. Hands-on multi-display capture, permission prompts, and
 interactive save/text sheets still need testing on a Mac.
+
+## Update the local app
+
+After cloning the repository once, update and reinstall the everyday Applications
+copy with one command from the repository root:
+
+```bash
+./scripts/install-local.sh
+```
+
+The installer checks that full Xcode is selected and that tracked work is clean,
+switches to `main`, pulls with `--ff-only`, and builds the Release app. Only after a
+successful build does it quit running iSnap copies, safely replace
+`/Applications/iSnap.app`, and relaunch it. Untracked local and Xcode files are left
+alone. If a build or signature check fails, the currently installed app is untouched.
+
+When testing a feature branch, continue using Command-R in Xcode. Use the installer
+after the feature has been merged and you want to update the Applications copy.
