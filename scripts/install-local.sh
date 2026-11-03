@@ -97,12 +97,21 @@ fi
 
 rm -rf "$previous_app"
 
+# Ad-hoc builds get a new signature every time, so macOS keeps a stale Screen Recording
+# grant for the old build. Unregister the build copy and clear the grant so the
+# installed app gets a single, fresh prompt.
+lsregister="/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister"
+"$lsregister" -u "$built_app" >/dev/null 2>&1 || true
+bundle_id="$(defaults read "$installed_app/Contents/Info.plist" CFBundleIdentifier)"
+tccutil reset ScreenCapture "$bundle_id" >/dev/null 2>&1 || true
+
 printf '\n%s\n' "Launching /Applications/iSnap.app..."
 open "$installed_app"
 
 for _ in {1..30}; do
     if pgrep -x "$app_name" >/dev/null 2>&1; then
         printf '\n%s\n' "Done — iSnap is updated, installed, and running."
+        printf '%s\n' "Grant Screen Recording access to iSnap again when macOS asks (this is expected after each install)."
         exit 0
     fi
     sleep 0.1
